@@ -3,31 +3,51 @@ const router = express.Router();
 const db = require("../models/db");
 const auth = require("../middleware/auth");
 
-
 // ================================
-// 🔥 CALCULAR PRÊMIO (DINÂMICO POR JOGO)
+// 🔥 CALCULAR PRÊMIO (POR PLACAR)
 // ================================
 router.post("/calcular", async (req, res) => {
   try {
-    const { valor, id_jogo } = req.body;
+    let { valor, id_jogo, placar1, placar2 } = req.body;
 
-    if (!valor || valor <= 0 || !id_jogo) {
+    console.log("CALCULAR:", req.body);
+
+    if (!valor || valor <= 0 || !id_jogo || placar1 == null || placar2 == null) {
       return res.status(400).json({ error: "Dados inválidos" });
     }
 
-    const [[jogo]] = await db.query(
-      "SELECT odd FROM jogos WHERE id_jogo = ?",
-      [id_jogo]
+    // 🔥 normalizar tipos (IMPORTANTE)
+    placar1 = String(placar1);
+    placar2 = String(placar2);
+
+    const [[oddData]] = await db.query(
+      `
+      SELECT odd 
+      FROM odds_placar 
+      WHERE id_jogo = ? 
+      AND CAST(placar1 AS CHAR) = ?
+      AND CAST(placar2 AS CHAR) = ?
+      LIMIT 1
+      `,
+      [id_jogo, placar1, placar2]
     );
 
-    if (!jogo) {
-      return res.status(404).json({ error: "Jogo não encontrado" });
+    console.log("ODD FOUND:", oddData);
+    console.log("BODY RECEBIDO:", req.body);
+
+const test = await db.query("SELECT * FROM odds_placar");
+console.log("ODDS TODAS:", test[0]);
+
+    if (!oddData) {
+      return res.status(404).json({
+        error: "Odd não encontrada para esse placar"
+      });
     }
 
-    const premio = valor * jogo.odd;
+    const premio = Number(valor) * Number(oddData.odd);
 
     return res.json({
-      odd: jogo.odd,
+      odd: Number(oddData.odd),
       premio: premio.toFixed(2),
     });
 
@@ -39,34 +59,51 @@ router.post("/calcular", async (req, res) => {
 
 
 // ================================
-// 🔥 CRIAR APOSTA (DINÂMICO POR JOGO)
+// 🔥 CRIAR APOSTA
 // ================================
 router.post("/criar", auth, async (req, res) => {
   try {
-    const { placar1, placar2, valor, id_jogo } = req.body;
+    let { placar1, placar2, valor, id_jogo } = req.body;
 
-    const id_usuario = req.usuario.id_usuario;
+    console.log("REQ:", { id_jogo, placar1, placar2, valor });
 
     if (!placar1 || !placar2 || !valor || !id_jogo) {
       return res.status(400).json({ error: "Dados incompletos" });
     }
 
-    // 🔥 buscar odd do jogo
-    const [[jogo]] = await db.query(
-      "SELECT odd FROM jogos WHERE id_jogo = ?",
-      [id_jogo]
+    const id_usuario = req.usuario.id_usuario;
+
+    placar1 = String(placar1);
+    placar2 = String(placar2);
+
+    const [[oddData]] = await db.query(
+      `
+      SELECT odd 
+      FROM odds_placar 
+      WHERE id_jogo = ? 
+      AND CAST(placar1 AS CHAR) = ?
+      AND CAST(placar2 AS CHAR) = ?
+      LIMIT 1
+      `,
+      [id_jogo, placar1, placar2]
     );
 
-    if (!jogo) {
-      return res.status(404).json({ error: "Jogo não encontrado" });
+    console.log("ODD:", oddData);
+
+    if (!oddData) {
+      return res.status(404).json({
+        error: "Odd não encontrada para esse placar"
+      });
     }
 
-    const premio = valor * jogo.odd;
+    const premio = Number(valor) * Number(oddData.odd);
 
     const [result] = await db.query(
-      `INSERT INTO apostas 
-       (id_usuario, id_jogo, placar1, placar2, valor, premio)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `
+      INSERT INTO apostas 
+      (id_usuario, id_jogo, placar1, placar2, valor, premio)
+      VALUES (?, ?, ?, ?, ?, ?)
+      `,
       [id_usuario, id_jogo, placar1, placar2, valor, premio]
     );
 
@@ -74,7 +111,7 @@ router.post("/criar", auth, async (req, res) => {
       message: "Aposta registrada com sucesso",
       id_aposta: result.insertId,
       premio: premio.toFixed(2),
-      odd: jogo.odd
+      odd: Number(oddData.odd)
     });
 
   } catch (err) {
@@ -82,6 +119,8 @@ router.post("/criar", auth, async (req, res) => {
     return res.status(500).json({ error: "Erro ao registrar aposta" });
   }
 });
+
+
 
 
 // ================================
@@ -149,7 +188,7 @@ router.get("/qrcode-pix", async (req, res) => {
 
 
 // ================================
-// 🔥 LISTAR JOGOS (NOVO ENDPOINT)
+// 🔥 LISTAR JOGOS
 // ================================
 router.get("/jogos", async (req, res) => {
   try {
@@ -164,6 +203,5 @@ router.get("/jogos", async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar jogos" });
   }
 });
-
 
 module.exports = router;
