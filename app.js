@@ -7,7 +7,9 @@ const app = express();
 
 // Configurar CORS corretamente para enviar cookies
 app.use(cors({
-  origin: "https://viraplacar.vercel.app", // ou a URL do seu frontend
+  origin: [
+    "https://viraplacar.vercel.app"
+  ],
   credentials: true
 }));
 
