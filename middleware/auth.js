@@ -12,7 +12,6 @@ module.exports = function (req, res, next) {
       token,
       process.env.JWT_SECRET || "SEGREDO_SUPER_SEGURO"
     );
-    console.log("USUARIO DO TOKEN:", decoded);
 
     req.usuario = decoded; // 🔥 salva o usuário na requisição
     next();

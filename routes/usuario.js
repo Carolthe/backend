@@ -56,13 +56,26 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// =========================
+// 🔓 LOGOUT (NOVO)
+// =========================
+router.post("/logout", (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  return res.json({ message: "Logout realizado" });
+});
+
 // Endpoint para verificar autenticação
 router.get("/verificar-auth", (req, res) => {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ logado: false });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "SEGREDO_SUPER_SEGURO");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     res.json({ logado: true, usuario: decoded });
   } catch (err) {
     res.status(401).json({ logado: false });
@@ -109,7 +122,6 @@ router.post("/recuperar-senha/email", async (req, res) => {
         text: `Seu código é: ${codigo}`,
       });
 
-      console.log("Código enviado:", codigo);
     }
 
     res.json({ message: "Se o email existir, um código foi enviado" });

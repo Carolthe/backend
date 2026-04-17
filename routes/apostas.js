@@ -10,7 +10,6 @@ router.post("/calcular", async (req, res) => {
   try {
     let { valor, id_jogo, placar1, placar2 } = req.body;
 
-    console.log("CALCULAR:", req.body);
 
     if (!valor || valor <= 0 || !id_jogo || placar1 == null || placar2 == null) {
       return res.status(400).json({ error: "Dados inválidos" });
@@ -32,11 +31,8 @@ router.post("/calcular", async (req, res) => {
       [id_jogo, placar1, placar2]
     );
 
-    console.log("ODD FOUND:", oddData);
-    console.log("BODY RECEBIDO:", req.body);
 
 const test = await db.query("SELECT * FROM odds_placar");
-console.log("ODDS TODAS:", test[0]);
 
     if (!oddData) {
       return res.status(404).json({
@@ -65,8 +61,6 @@ router.post("/criar", auth, async (req, res) => {
   try {
     let { placar1, placar2, valor, id_jogo } = req.body;
 
-    console.log("REQ:", { id_jogo, placar1, placar2, valor });
-
     if (!placar1 || !placar2 || !valor || !id_jogo) {
       return res.status(400).json({ error: "Dados incompletos" });
     }
@@ -88,7 +82,6 @@ router.post("/criar", auth, async (req, res) => {
       [id_jogo, placar1, placar2]
     );
 
-    console.log("ODD:", oddData);
 
     if (!oddData) {
       return res.status(404).json({
