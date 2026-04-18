@@ -10,7 +10,7 @@ module.exports = function (req, res, next) {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "SEGREDO_SUPER_SEGURO"
+      process.env.JWT_SECRET
     );
 
     req.usuario = decoded; // 🔥 salva o usuário na requisição
