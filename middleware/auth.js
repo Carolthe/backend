@@ -1,22 +1,19 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = function (req, res, next) {
-  const token = req.cookies.token;
+module.exports = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Não autorizado" });
   }
 
+  const token = authHeader.split(" ")[1];
+
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    req.usuario = decoded; // 🔥 salva o usuário na requisição
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.usuario = decoded;
     next();
-
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: "Token inválido" });
   }
 };
