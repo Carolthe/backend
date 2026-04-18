@@ -32,8 +32,6 @@ router.post("/calcular", async (req, res) => {
     );
 
 
-const test = await db.query("SELECT * FROM odds_placar");
-
     if (!oddData) {
       return res.status(404).json({
         error: "Odd não encontrada para esse placar"
